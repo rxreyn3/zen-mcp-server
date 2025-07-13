@@ -384,6 +384,7 @@ def configure_providers():
         value = os.getenv(key)
         logger.debug(f"  {key}: {'[PRESENT]' if value else '[MISSING]'}")
     from providers import ModelProviderRegistry
+    from providers.azure_openai import AzureOpenAIModelProvider
     from providers.base import ProviderType
     from providers.custom import CustomProvider
     from providers.dial import DIALModelProvider
@@ -417,6 +418,23 @@ def configure_providers():
             logger.debug("OpenAI API key not found in environment")
         else:
             logger.debug("OpenAI API key is placeholder value")
+
+    # Check for Azure OpenAI API key
+    azure_openai_key = os.getenv("AZURE_OPENAI_API_KEY")
+    azure_openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+    logger.debug(f"Azure OpenAI key check: key={'[PRESENT]' if azure_openai_key else '[MISSING]'}")
+    logger.debug(f"Azure OpenAI endpoint check: endpoint={'[PRESENT]' if azure_openai_endpoint else '[MISSING]'}")
+    if azure_openai_key and azure_openai_key != "your_azure_openai_api_key_here" and azure_openai_endpoint:
+        valid_providers.append("Azure OpenAI")
+        has_native_apis = True
+        logger.info("Azure OpenAI API key and endpoint found - Azure OpenAI models available")
+    else:
+        if not azure_openai_key:
+            logger.debug("Azure OpenAI API key not found in environment")
+        elif not azure_openai_endpoint:
+            logger.debug("Azure OpenAI endpoint not found in environment")
+        else:
+            logger.debug("Azure OpenAI API key is placeholder value")
 
     # Check for X.AI API key
     xai_key = os.getenv("XAI_API_KEY")
@@ -469,6 +487,8 @@ def configure_providers():
             ModelProviderRegistry.register_provider(ProviderType.GOOGLE, GeminiModelProvider)
         if openai_key and openai_key != "your_openai_api_key_here":
             ModelProviderRegistry.register_provider(ProviderType.OPENAI, OpenAIModelProvider)
+        if azure_openai_key and azure_openai_key != "your_azure_openai_api_key_here" and azure_openai_endpoint:
+            ModelProviderRegistry.register_provider(ProviderType.AZURE_OPENAI, AzureOpenAIModelProvider)
         if xai_key and xai_key != "your_xai_api_key_here":
             ModelProviderRegistry.register_provider(ProviderType.XAI, XAIModelProvider)
         if dial_key and dial_key != "your_dial_api_key_here":
