@@ -163,6 +163,7 @@ coverage.xml
 
 # Test simulation artifacts (dynamically created during testing)
 test_simulation_files/.claude/
+test_simulation_files/
 
 # Temporary test directories
 test-setup/
