@@ -57,9 +57,12 @@ class TestAzureOpenAIProvider:
         assert provider.azure_endpoint == "https://test-resource.openai.azure.com"  # Should strip trailing slash
         assert provider.api_version == "2024-06-01"
 
-    @patch.dict(os.environ, {"AZURE_OPENAI_API_KEY": "test-key"})
+    @patch.dict(os.environ, {"AZURE_OPENAI_API_KEY": "test-key"}, clear=False)
     def test_initialization_missing_endpoint_raises_error(self):
         """Test that missing endpoint raises an error."""
+        # Explicitly remove AZURE_OPENAI_ENDPOINT to test error handling
+        if "AZURE_OPENAI_ENDPOINT" in os.environ:
+            del os.environ["AZURE_OPENAI_ENDPOINT"]
         with pytest.raises(ValueError, match="AZURE_OPENAI_ENDPOINT environment variable is required"):
             AzureOpenAIModelProvider("test-key")
 
@@ -195,7 +198,7 @@ class TestAzureOpenAIProvider:
             "AZURE_OPENAI_DEPLOYMENTS": '{"gpt-4": "my-gpt4-deployment"}',
         },
     )
-    @patch("providers.openai_compatible.AzureOpenAI")
+    @patch("openai.AzureOpenAI")
     def test_generate_content_uses_deployment_name(self, mock_azure_openai_class):
         """Test that generate_content uses deployment name in API calls."""
         # Set up mock Azure OpenAI client
@@ -248,7 +251,7 @@ class TestAzureOpenAIProvider:
             "AZURE_OPENAI_DEPLOYMENTS": '{"gpt-4": "my-gpt4-deployment"}',
         },
     )
-    @patch("providers.openai_compatible.AzureOpenAI")
+    @patch("openai.AzureOpenAI")
     def test_generate_content_with_alias_resolution(self, mock_azure_openai_class):
         """Test that generate_content resolves aliases and uses correct deployment."""
         # Set up mock Azure OpenAI client
@@ -354,7 +357,7 @@ class TestAzureOpenAIProvider:
         provider = AzureOpenAIModelProvider("test-key")
 
         # Check that the client property creates an AzureOpenAI client (not OpenAI client)
-        with patch("providers.azure_openai.AzureOpenAI") as mock_azure_openai:
+        with patch("openai.AzureOpenAI") as mock_azure_openai:
             mock_client = MagicMock()
             mock_azure_openai.return_value = mock_client
 
