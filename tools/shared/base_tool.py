@@ -434,14 +434,34 @@ class BaseTool(ABC):
                         "\nOpenRouter models: If configured, you can also use ANY model available on OpenRouter."
                     )
 
-            # Get all available models for the enum
-            all_models = self._get_available_models()
-
-            return {
-                "type": "string",
-                "description": "\n".join(model_desc_parts),
-                "enum": all_models,
-            }
+            # In auto mode, don't use enum validation to allow "auto" meta-instruction
+            # This prevents conflicts between server-level instructions and provider restrictions
+            from config import IS_AUTO_MODE
+            
+            if IS_AUTO_MODE:
+                # Auto mode: allow "auto" and any model name (like normal mode)
+                available_models = self._get_available_models()
+                models_str = ", ".join(f"'{m}'" for m in available_models)
+                
+                description_parts = model_desc_parts + [
+                    f"\nAvailable models: {models_str}",
+                    "\nUse 'auto' to let Claude select the best model for the task."
+                ]
+                
+                return {
+                    "type": "string",
+                    "description": "\n".join(description_parts),
+                    # No enum - allows "auto" and respects model restrictions during resolution
+                }
+            else:
+                # Non-auto mode: use strict enum validation
+                all_models = self._get_available_models()
+                
+                return {
+                    "type": "string",
+                    "description": "\n".join(model_desc_parts),
+                    "enum": all_models,
+                }
         else:
             # Normal mode - model is optional with default
             available_models = self._get_available_models()

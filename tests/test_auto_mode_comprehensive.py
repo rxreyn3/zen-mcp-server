@@ -290,58 +290,20 @@ class TestAutoModeComprehensive:
             # Should have model as required field
             assert "model" in schema["required"]
 
-            # Should include all model options from global config
+            # Auto mode should use open string validation (no enum)
             model_schema = schema["properties"]["model"]
-            assert "enum" in model_schema
+            assert "enum" not in model_schema  # Auto mode allows "auto" and any model
 
-            available_models = model_schema["enum"]
+            # Should include Gemini models in description
+            description = model_schema["description"]
+            assert "flash" in description
+            assert "pro" in description
+            assert "Use 'auto' to let Claude select" in description
 
-            # Should include Gemini models
-            assert "flash" in available_models
-            assert "pro" in available_models
-            assert "gemini-2.5-flash" in available_models
-            assert "gemini-2.5-pro" in available_models
-
-            # After the fix, schema only shows models from enabled providers
-            # This prevents model namespace collisions and misleading users
-            # If only Gemini is configured, only Gemini models should appear
-            provider_count = len(
-                [
-                    key
-                    for key in ["GEMINI_API_KEY", "OPENAI_API_KEY", "XAI_API_KEY", "OPENROUTER_API_KEY"]
-                    if os.getenv(key) and os.getenv(key) != f"your_{key.lower()}_here"
-                ]
-            )
-
-            if provider_count == 1 and os.getenv("GEMINI_API_KEY"):
-                # Only Gemini configured - should only show Gemini models
-                non_gemini_models = [
-                    m
-                    for m in available_models
-                    if not m.startswith("gemini")
-                    and m
-                    not in [
-                        "flash",
-                        "pro",
-                        "flash-2.0",
-                        "flash2",
-                        "flashlite",
-                        "flash-lite",
-                        "flash2.5",
-                        "gemini pro",
-                        "gemini-pro",
-                    ]
-                ]
-                assert (
-                    len(non_gemini_models) == 0
-                ), f"Found non-Gemini models when only Gemini configured: {non_gemini_models}"
-            else:
-                # Multiple providers or OpenRouter - should include various models
-                # Only check if models are available if their providers might be configured
-                if os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY"):
-                    assert any("o3" in m or "o4" in m for m in available_models), "No OpenAI models found"
-                if os.getenv("XAI_API_KEY") or os.getenv("OPENROUTER_API_KEY"):
-                    assert any("grok" in m for m in available_models), "No XAI models found"
+            # Auto mode architecture change: Models are now in description, not enum
+            # This allows "auto" as a valid input while still showing available models
+            # Test that the description contains information about available models
+            assert "Available models:" in description
 
     def test_auto_mode_schema_with_all_providers(self):
         """Test that auto mode schema includes models from all available providers."""
@@ -380,20 +342,25 @@ class TestAutoModeComprehensive:
             schema = tool.get_input_schema()
 
             model_schema = schema["properties"]["model"]
-            available_models = model_schema["enum"]
-
-            # Should include models from all providers
+            assert "enum" not in model_schema  # Auto mode uses open string validation
+            
+            # Should include models from all providers in description
+            description = model_schema["description"]
+            
             # Gemini models
-            assert "flash" in available_models
-            assert "pro" in available_models
+            assert "flash" in description
+            assert "pro" in description
 
-            # OpenAI models
-            assert "o3" in available_models
-            assert "o4-mini" in available_models
+            # OpenAI models  
+            assert "o3" in description
+            assert "o4-mini" in description
 
             # XAI models
-            assert "grok" in available_models
-            assert "grok-3" in available_models
+            assert "grok" in description
+            
+            # Should allow "auto" instruction
+            assert "Use 'auto' to let Claude select" in description
+            assert "grok-3" in description
 
     @pytest.mark.asyncio
     async def test_auto_mode_model_parameter_required_error(self):

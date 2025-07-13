@@ -90,11 +90,11 @@ class TestAutoMode:
             # Model should be required
             assert "model" in schema["required"]
 
-            # Model field should have detailed descriptions
+            # Model field should have detailed descriptions but no enum (allows "auto")
             model_schema = schema["properties"]["model"]
-            assert "enum" in model_schema
-            assert "flash" in model_schema["enum"]
+            assert "enum" not in model_schema  # Auto mode uses open string validation
             assert "select the most suitable model" in model_schema["description"]
+            assert "Use 'auto' to let Claude select" in model_schema["description"]
 
         finally:
             # Restore
@@ -287,18 +287,10 @@ class TestAutoMode:
             importlib.reload(config)
 
             schema = tool.get_model_field_schema()
-            assert "enum" in schema
-            # Test that some basic models are available (those that should be available with dummy keys)
-            available_models = schema["enum"]
-            # Check for models that should be available with basic provider setup
-            expected_basic_models = ["flash", "pro"]  # Gemini models from conftest.py
-            for model in expected_basic_models:
-                if model not in available_models:
-                    print(f"Missing expected model: {model}")
-                    print(f"Available models: {available_models}")
-            assert any(
-                model in available_models for model in expected_basic_models
-            ), f"None of {expected_basic_models} found in {available_models}"
+            assert "enum" not in schema  # Auto mode uses open string validation
+            # Check that available models are listed in description 
+            assert "Available models:" in schema["description"]
+            assert "Use 'auto' to let Claude select" in schema["description"]
             assert "select the most suitable model" in schema["description"]
 
             # Test normal mode

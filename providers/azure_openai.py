@@ -114,6 +114,60 @@ class AzureOpenAIModelProvider(OpenAICompatibleProvider):
             description="GPT-4o-mini via Azure OpenAI (128K context) - Balanced performance and cost",
             aliases=["gpt4o-mini"],
         ),
+        "o3-mini": ModelCapabilities(
+            provider=ProviderType.AZURE_OPENAI,
+            model_name="o3-mini",
+            friendly_name="Azure OpenAI (O3-mini)",
+            context_window=200_000,  # 200K tokens
+            max_output_tokens=100_000,  # 100K tokens
+            supports_extended_thinking=True,
+            supports_system_prompts=True,
+            supports_streaming=True,
+            supports_function_calling=True,
+            supports_json_mode=True,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            supports_temperature=False,  # O3 models don't support temperature
+            temperature_constraint=None,
+            description="O3-mini via Azure - Fast reasoning model with 200K context and extended thinking",
+            aliases=[],
+        ),
+        "o3": ModelCapabilities(
+            provider=ProviderType.AZURE_OPENAI,
+            model_name="o3",
+            friendly_name="Azure OpenAI (O3)",
+            context_window=200_000,  # 200K tokens
+            max_output_tokens=100_000,  # 100K tokens
+            supports_extended_thinking=True,
+            supports_system_prompts=True,
+            supports_streaming=True,
+            supports_function_calling=True,
+            supports_json_mode=True,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            supports_temperature=False,  # O3 models don't support temperature
+            temperature_constraint=None,
+            description="O3 via Azure - Powerful reasoning model for coding, math, science (200K context)",
+            aliases=[],
+        ),
+        "o3-pro": ModelCapabilities(
+            provider=ProviderType.AZURE_OPENAI,
+            model_name="o3-pro",
+            friendly_name="Azure OpenAI (O3-pro)",
+            context_window=200_000,  # 200K tokens
+            max_output_tokens=100_000,  # 100K tokens
+            supports_extended_thinking=True,
+            supports_system_prompts=True,
+            supports_streaming=True,
+            supports_function_calling=True,
+            supports_json_mode=True,
+            supports_images=True,
+            max_image_size_mb=20.0,
+            supports_temperature=False,  # O3 models don't support temperature
+            temperature_constraint=None,
+            description="O3-pro via Azure - Professional grade reasoning model (EXTREMELY EXPENSIVE)",
+            aliases=[],
+        ),
     }
 
     def __init__(self, api_key: str, **kwargs):

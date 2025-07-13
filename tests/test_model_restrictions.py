@@ -183,6 +183,59 @@ class TestModelRestrictionService:
 
             assert filtered == ["opus", "mistral"]
 
+    def test_azure_openai_model_restrictions(self):
+        """Test Azure OpenAI model restrictions functionality."""
+        with patch.dict(os.environ, {"AZURE_OPENAI_ALLOWED_MODELS": "o3-mini,o3,o3-pro"}):
+            service = ModelRestrictionService()
+
+            # Should only allow specified Azure OpenAI models
+            assert service.is_allowed(ProviderType.AZURE_OPENAI, "o3-mini")
+            assert service.is_allowed(ProviderType.AZURE_OPENAI, "o3")
+            assert service.is_allowed(ProviderType.AZURE_OPENAI, "o3-pro")
+            assert not service.is_allowed(ProviderType.AZURE_OPENAI, "gpt-4")
+            assert not service.is_allowed(ProviderType.AZURE_OPENAI, "gpt-35-turbo")
+            assert not service.is_allowed(ProviderType.AZURE_OPENAI, "gpt-4o")
+
+            # Other providers should have no restrictions
+            assert service.is_allowed(ProviderType.OPENAI, "o3")
+            assert service.is_allowed(ProviderType.GOOGLE, "pro")
+
+            # Should have restrictions for Azure OpenAI
+            assert service.has_restrictions(ProviderType.AZURE_OPENAI)
+            assert not service.has_restrictions(ProviderType.OPENAI)
+            assert not service.has_restrictions(ProviderType.GOOGLE)
+
+    def test_azure_openai_single_model_restriction(self):
+        """Test Azure OpenAI with a single allowed model."""
+        with patch.dict(os.environ, {"AZURE_OPENAI_ALLOWED_MODELS": "gpt-4"}):
+            service = ModelRestrictionService()
+
+            # Should only allow gpt-4
+            assert service.is_allowed(ProviderType.AZURE_OPENAI, "gpt-4")
+            assert not service.is_allowed(ProviderType.AZURE_OPENAI, "gpt-35-turbo")
+            assert not service.is_allowed(ProviderType.AZURE_OPENAI, "o3")
+            assert not service.is_allowed(ProviderType.AZURE_OPENAI, "o3-mini")
+
+    def test_azure_openai_empty_restriction(self):
+        """Test Azure OpenAI with empty restriction (provider disabled)."""
+        with patch.dict(os.environ, {"AZURE_OPENAI_ALLOWED_MODELS": ""}):
+            service = ModelRestrictionService()
+
+            # Empty string means no restrictions (all models allowed)
+            assert service.is_allowed(ProviderType.AZURE_OPENAI, "gpt-4")
+            assert service.is_allowed(ProviderType.AZURE_OPENAI, "o3")
+            assert service.is_allowed(ProviderType.AZURE_OPENAI, "any-model")
+
+    def test_azure_openai_filter_models(self):
+        """Test filtering Azure OpenAI models based on restrictions."""
+        with patch.dict(os.environ, {"AZURE_OPENAI_ALLOWED_MODELS": "o3,o3-mini"}):
+            service = ModelRestrictionService()
+
+            models = ["o3", "o3-mini", "o3-pro", "gpt-4", "gpt-35-turbo"]
+            filtered = service.filter_models(ProviderType.AZURE_OPENAI, models)
+
+            assert filtered == ["o3", "o3-mini"]
+
     def test_combined_provider_restrictions(self):
         """Test that restrictions work correctly when set for multiple providers."""
         with patch.dict(
@@ -191,6 +244,7 @@ class TestModelRestrictionService:
                 "OPENAI_ALLOWED_MODELS": "o3-mini",
                 "GOOGLE_ALLOWED_MODELS": "flash",
                 "OPENROUTER_ALLOWED_MODELS": "opus,sonnet",
+                "AZURE_OPENAI_ALLOWED_MODELS": "o3,o3-pro",
             },
         ):
             service = ModelRestrictionService()
@@ -208,10 +262,17 @@ class TestModelRestrictionService:
             assert service.is_allowed(ProviderType.OPENROUTER, "sonnet")
             assert not service.is_allowed(ProviderType.OPENROUTER, "haiku")
 
+            # Azure OpenAI restrictions
+            assert service.is_allowed(ProviderType.AZURE_OPENAI, "o3")
+            assert service.is_allowed(ProviderType.AZURE_OPENAI, "o3-pro")
+            assert not service.is_allowed(ProviderType.AZURE_OPENAI, "o3-mini")
+            assert not service.is_allowed(ProviderType.AZURE_OPENAI, "gpt-4")
+
             # All providers should have restrictions
             assert service.has_restrictions(ProviderType.OPENAI)
             assert service.has_restrictions(ProviderType.GOOGLE)
             assert service.has_restrictions(ProviderType.OPENROUTER)
+            assert service.has_restrictions(ProviderType.AZURE_OPENAI)
 
 
 class TestProviderIntegration:

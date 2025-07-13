@@ -35,8 +35,9 @@ Regardless of your default configuration, you can specify models per request:
 |-------|----------|---------|-----------|------------------|
 | **`pro`** (Gemini 2.5 Pro) | Google | 1M tokens | Extended thinking (up to 32K tokens), deep analysis | Complex architecture, security reviews, deep debugging |
 | **`flash`** (Gemini 2.0 Flash) | Google | 1M tokens | Ultra-fast responses | Quick checks, formatting, simple analysis |
-| **`o3`** | OpenAI | 200K tokens | Strong logical reasoning | Debugging logic errors, systematic analysis |
-| **`o3-mini`** | OpenAI | 200K tokens | Balanced speed/quality | Moderate complexity tasks |
+| **`o3`** | OpenAI / Azure OpenAI | 200K tokens | Strong logical reasoning | Debugging logic errors, systematic analysis |
+| **`o3-mini`** | OpenAI / Azure OpenAI | 200K tokens | Balanced speed/quality | Moderate complexity tasks |
+| **`o3-pro`** | OpenAI / Azure OpenAI | 200K tokens | Professional-grade reasoning (EXPENSIVE) | Critical decisions, complex problems |
 | **`o4-mini`** | OpenAI | 200K tokens | Latest reasoning model | Optimized for shorter contexts |
 | **`gpt4.1`** | OpenAI | 1M tokens | Latest GPT-4 with extended context | Large codebase analysis, comprehensive reviews |
 | **`llama`** (Llama 3.2) | Custom/Local | 128K tokens | Local inference, privacy | On-device analysis, cost-free processing |
@@ -50,6 +51,13 @@ cloud models (expensive/powerful) AND local models (free/private) in the same co
 - **O3 Models**: Excellent reasoning, systematic analysis, 200K context
 - **GPT-4.1**: Extended context window (1M tokens), general capabilities
 
+**Azure OpenAI Integration:**
+O3 models (`o3`, `o3-mini`, `o3-pro`) are available through both regular OpenAI and Azure OpenAI providers:
+- **Auto mode**: Prefers OpenAI → falls back to Azure OpenAI based on configuration
+- **Enterprise features**: Azure provides compliance, private endpoints, and enterprise billing
+- **Same functionality**: Identical model capabilities regardless of provider
+- **Independent restrictions**: `OPENAI_ALLOWED_MODELS` and `AZURE_OPENAI_ALLOWED_MODELS` work separately
+
 ## Model Usage Restrictions
 
 **For complete restriction configuration**, see the [Configuration Guide](configuration.md#model-usage-restrictions).
@@ -61,18 +69,27 @@ cloud models (expensive/powerful) AND local models (free/private) in the same co
 # Development: Allow experimentation
 GOOGLE_ALLOWED_MODELS=flash,pro
 OPENAI_ALLOWED_MODELS=o4-mini,o3-mini
+AZURE_OPENAI_ALLOWED_MODELS=o3-mini,o3,o3-pro
 
 # Production: Cost-optimized  
 GOOGLE_ALLOWED_MODELS=flash
 OPENAI_ALLOWED_MODELS=o4-mini
+AZURE_OPENAI_ALLOWED_MODELS=o3-mini
 
 # High-performance: Quality over cost
 GOOGLE_ALLOWED_MODELS=pro
 OPENAI_ALLOWED_MODELS=o3,o4-mini
+AZURE_OPENAI_ALLOWED_MODELS=o3,o3-pro
+
+# Azure-only setup (enterprise environments)
+AZURE_OPENAI_ALLOWED_MODELS=o3-mini,o3,o3-pro
+# Leave OPENAI_ALLOWED_MODELS unset to disable regular OpenAI
 ```
 
 **Important Notes:**
 - Restrictions apply to all usage including auto mode
+- `AZURE_OPENAI_ALLOWED_MODELS` works independently from `OPENAI_ALLOWED_MODELS`
+- Auto mode respects both provider restrictions when selecting models
 - `OPENROUTER_ALLOWED_MODELS` only affects OpenRouter models accessed via custom provider (where `is_custom: false` in custom_models.json)
 - Custom local models (`is_custom: true`) are not affected by any restrictions
 
